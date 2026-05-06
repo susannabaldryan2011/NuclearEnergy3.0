@@ -1,0 +1,25 @@
+{
+  "entities": {
+    "Comment": {
+      "title": "Comment",
+      "description": "User comments on content sections",
+      "type": "object",
+      "properties": {
+        "text": { "type": "string", "description": "The comment text" },
+        "userId": { "type": "string", "description": "The ID of the user who wrote the comment" },
+        "userName": { "type": "string", "description": "The name of the user who wrote the comment" },
+        "userEmail": { "type": "string", "description": "The email of the user who wrote the comment" },
+        "sectionId": { "type": "string", "description": "The ID of the section this comment belongs to" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the comment was created" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "When the comment was last updated" }
+      },
+      "required": ["text", "userId", "sectionId", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/comments/{commentId}": {
+      "schema": "Comment",
+      "description": "Global collection of comments"
+    }
+  }
+}

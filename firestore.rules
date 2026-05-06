@@ -1,0 +1,54 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(resource) {
+      return isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+    
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidComment(data) {
+      return data.text is string && data.text.size() > 0 && data.text.size() <= 1000 &&
+             data.userId == request.auth.uid &&
+             data.sectionId is string && data.sectionId.size() <= 100 &&
+             data.createdAt == request.time;
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    match /test/connection {
+      allow read: if true;
+    }
+
+    match /comments/{commentId} {
+      allow list: if true; // Publicly readable, filtered by section in client
+      allow get: if true;
+      
+      allow create: if isSignedIn() && 
+                      isValidId(commentId) && 
+                      isValidComment(request.resource.data);
+                      
+      allow update: if isOwner(resource) && 
+                      request.resource.data.userId == resource.data.userId &&
+                      request.resource.data.sectionId == resource.data.sectionId &&
+                      request.resource.data.createdAt == resource.data.createdAt &&
+                      request.resource.data.text is string && 
+                      request.resource.data.text.size() > 0 && 
+                      request.resource.data.text.size() <= 1000 &&
+                      request.resource.data.updatedAt == request.time &&
+                      request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text', 'updatedAt', 'userName', 'userEmail']);
+                      
+      allow delete: if isOwner(resource);
+    }
+  }
+}
